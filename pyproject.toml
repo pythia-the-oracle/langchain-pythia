@@ -1,0 +1,42 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "langchain-pythia"
+version = "0.1.0"
+description = "LangChain integration for Pythia Oracle — on-chain calculated crypto indicators (EMA, RSI, Bollinger, Volatility) via Chainlink"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+authors = [
+    { name = "Pythia Oracle", email = "ivan.jeremic@c3x-solutions.com" },
+]
+keywords = [
+    "langchain", "oracle", "chainlink", "defi", "crypto",
+    "ema", "rsi", "bollinger", "volatility", "on-chain",
+    "technical-analysis", "ai-agent", "smart-contracts",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Office/Business :: Financial",
+]
+dependencies = [
+    "langchain-core>=1.2.21,<2.0.0",
+    "httpx>=0.25.0,<1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-asyncio>=0.20",
+]
+
+[project.urls]
+Homepage = "https://pythia.c3x-solutions.com"
+Repository = "https://github.com/pythia-the-oracle/langchain-pythia"
+Documentation = "https://github.com/pythia-the-oracle/langchain-pythia#readme"
