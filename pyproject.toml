@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "langchain-pythia"
-version = "0.1.0"
+version = "0.1.1"
 description = "LangChain integration for Pythia Oracle — on-chain calculated crypto indicators (EMA, RSI, Bollinger, Volatility) via Chainlink"
 readme = "README.md"
 license = "MIT"

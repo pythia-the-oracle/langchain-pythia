@@ -29,26 +29,37 @@ CONTRACTS = {
     "consumers": {
         "discovery": {
             "address": "0xeC2865d66ae6Af47926B02edd942A756b394F820",
-            "fee": "0.01 LINK",
             "returns": "uint256 (single indicator)",
         },
         "analysis": {
             "address": "0x3b3aC62d73E537E3EF84D97aB5B84B51aF8dB316",
-            "fee": "0.03 LINK",
             "returns": "uint256[] (1H/1D/1W bundle)",
         },
         "speed": {
             "address": "0xC406e7d9AC385e7AB43cBD56C74ad487f085d47B",
-            "fee": "0.05 LINK",
             "returns": "uint256[] (5M bundle)",
         },
         "complete": {
             "address": "0x2dEC98fd7173802b351d1E28d0Cd5DdD20C24252",
-            "fee": "0.10 LINK",
             "returns": "uint256[] (all indicators)",
         },
     },
 }
+
+# Fallback pricing — used when feed-status.json is unreachable
+_FALLBACK_PRICING = {
+    "discovery": 0.01,
+    "analysis": 0.03,
+    "speed": 0.05,
+    "complete": 0.10,
+}
+
+
+def _get_tier_fees(data: dict) -> dict:
+    """Extract tier fees from feed-status.json data, or return fallback."""
+    if data and "tiers" in data:
+        return {t["id"]: t["fee"] for t in data["tiers"] if "id" in t and "fee" in t}
+    return _FALLBACK_PRICING.copy()
 
 
 # ---------------------------------------------------------------------------
@@ -265,18 +276,32 @@ class PythiaContractsTool(BaseTool):
     description: str = (
         "Get Pythia Oracle contract addresses on Polygon for smart contract "
         "integration. Returns operator, LINK token, faucet, and consumer "
-        "contract addresses for all pricing tiers."
+        "contract addresses with live pricing for all tiers."
     )
 
     def _run(
         self, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
-        return json.dumps(CONTRACTS, indent=2)
+        data = fetch_data_sync()
+        return _format_contracts(data)
 
     async def _arun(
         self, run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
-        return json.dumps(CONTRACTS, indent=2)
+        data = await fetch_data()
+        return _format_contracts(data)
+
+
+def _format_contracts(data: dict) -> str:
+    fees = _get_tier_fees(data)
+    result = dict(CONTRACTS)
+    result["consumers"] = {}
+    for tier, info in CONTRACTS["consumers"].items():
+        result["consumers"][tier] = {
+            **info,
+            "fee": f"{fees.get(tier, '?')} LINK",
+        }
+    return json.dumps(result, indent=2)
 
 
 # ---------------------------------------------------------------------------
@@ -289,27 +314,35 @@ class PythiaPricingTool(BaseTool):
 
     name: str = "pythia_pricing"
     description: str = (
-        "Get Pythia Oracle pricing tiers (Discovery 0.01 LINK, Analysis "
-        "0.03, Speed 0.05, Complete 0.10) and free trial faucet info."
+        "Get Pythia Oracle pricing tiers and free trial faucet info. "
+        "Prices are live from the data feed."
     )
 
     def _run(
         self, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
-        return _PRICING_TEXT
+        data = fetch_data_sync()
+        return _format_pricing(data)
 
     async def _arun(
         self, run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
-        return _PRICING_TEXT
+        data = await fetch_data()
+        return _format_pricing(data)
 
 
-_PRICING_TEXT = """Pythia Oracle Pricing
+def _format_pricing(data: dict) -> str:
+    fees = _get_tier_fees(data)
+    d = fees.get("discovery", "?")
+    a = fees.get("analysis", "?")
+    s = fees.get("speed", "?")
+    c = fees.get("complete", "?")
+    return f"""Pythia Oracle Pricing
 
-  DISCOVERY — 0.01 LINK: Any single indicator. Returns uint256.
-  ANALYSIS  — 0.03 LINK: All 1H/1D/1W indicators bundled. Returns uint256[].
-  SPEED     — 0.05 LINK: All 5-minute indicators bundled. Returns uint256[].
-  COMPLETE  — 0.10 LINK: Every indicator for a token. Returns uint256[].
+  DISCOVERY — {d} LINK: Any single indicator. Returns uint256.
+  ANALYSIS  — {a} LINK: All 1H/1D/1W indicators bundled. Returns uint256[].
+  SPEED     — {s} LINK: All 5-minute indicators bundled. Returns uint256[].
+  COMPLETE  — {c} LINK: Every indicator for a token. Returns uint256[].
 
   FREE TRIAL — PythiaFaucet (0x640fC3B9B607E324D7A3d89Fcb62C77Cc0Bd420A)
   No LINK needed. 5 requests/day/address. Real data.
