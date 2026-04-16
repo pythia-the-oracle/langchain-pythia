@@ -8,6 +8,8 @@ from langchain_pythia.tools import (
     PythiaPricingTool,
     PythiaEventsInfoTool,
     PythiaSubscribeInfoTool,
+    PythiaVisionsInfoTool,
+    PythiaVisionHistoryTool,
 )
 
 __all__ = [
@@ -18,4 +20,6 @@ __all__ = [
     "PythiaPricingTool",
     "PythiaEventsInfoTool",
     "PythiaSubscribeInfoTool",
+    "PythiaVisionsInfoTool",
+    "PythiaVisionHistoryTool",
 ]

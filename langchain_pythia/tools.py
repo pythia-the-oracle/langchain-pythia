@@ -55,6 +55,17 @@ _FALLBACK_CONTRACTS = {
 
 _CONDITION_NAMES = {0: "ABOVE", 1: "BELOW", 2: "CROSSES_ABOVE", 3: "CROSSES_BELOW"}
 
+# Fallback Visions data — offline resilience (static backtest results 2017-2026)
+_VISIONS_REGISTRY = "0x39407eEc3Ba80746BC6156eD924D16C2689533Ed"
+_VISIONS_PATTERNS = [
+    {"name": "CAPITULATION_STRONG", "code": "0x11", "accuracy": "85-87%", "avg_return": "+7-8%", "sample": 62},
+    {"name": "CAPITULATION_BOUNCE", "code": "0x10", "accuracy": "80%", "avg_return": "+5-7%", "sample": 78},
+    {"name": "EMA_DIVERGENCE_STRONG", "code": "0x21", "accuracy": "89%", "avg_return": "+6%", "sample": 36},
+    {"name": "EMA_DIVERGENCE_SNAP", "code": "0x20", "accuracy": "74-80%", "avg_return": "+4-5%", "sample": 67},
+    {"name": "BOLLINGER_EXTREME", "code": "0x30", "accuracy": "74%", "avg_return": "+3-4%", "sample": 38},
+    {"name": "OVERBOUGHT_CONTINUATION", "code": "0x40", "accuracy": "60-65%", "avg_return": "+1-2%", "sample": 127},
+]
+
 
 def _parse_consumers(raw: dict) -> dict[str, str]:
     """Convert {"Discovery (0.01 LINK)": "0x..."} → {"discovery": "0x..."}."""
@@ -556,4 +567,189 @@ def _format_subscribe_info(
 
     lines.append(f"\nLINK Token (mainnet): {mainnet['link_token']}")
     lines.append(f"Refund: {events.get('refund', 'unused whole days refunded')}")
+    return "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------
+# Tool: Visions Info
+# ---------------------------------------------------------------------------
+
+
+class PythiaVisionsInfoTool(BaseTool):
+    """Get overview of Pythia Visions — AI-calibrated market intelligence on-chain."""
+
+    name: str = "pythia_visions_info"
+    description: str = (
+        "Get overview of Pythia Visions: AI-calibrated market intelligence. "
+        "Returns 6 backtested patterns with accuracy (74-89%), contract address, "
+        "subscription info (FREE), evaluation frequency, integration guide, "
+        "and Solidity code for subscribing to VisionFired events."
+    )
+
+    def _run(
+        self, run_manager: Optional[CallbackManagerForToolRun] = None
+    ) -> str:
+        data = fetch_data_sync()
+        return _format_visions_info(data)
+
+    async def _arun(
+        self, run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+    ) -> str:
+        data = await fetch_data()
+        return _format_visions_info(data)
+
+
+def _format_visions_info(data: dict) -> str:
+    visions = data.get("visions", {}) if data else {}
+
+    registry = visions.get("registry", _VISIONS_REGISTRY)
+    patterns = visions.get("patterns", _VISIONS_PATTERNS)
+    tokens = visions.get("tokens", ["BTC"])
+    stats = visions.get("stats", {})
+
+    lines = ["Pythia Visions — AI Market Intelligence On-Chain\n"]
+    lines.append(
+        "Backtested, AI-calibrated pattern detections delivered on-chain via "
+        "Chainlink. Evaluated every 6 hours. FREE to subscribe."
+    )
+    lines.append("")
+
+    lines.append("Detected Patterns (validated 2017-2026, 75K+ candles):\n")
+    for p in patterns:
+        lines.append(
+            f"  {p['name']:<28} {p['code']:<6} "
+            f"{p['accuracy']:<10} {p['avg_return']:<12} {p['sample']} samples"
+        )
+    lines.append("")
+
+    lines.append("How It Works:")
+    lines.append("  1. Every 6h: read live indicators (EMA, RSI, Bollinger, VWAP, ATR)")
+    lines.append("  2. Mechanical pattern detection checks 6 known patterns")
+    lines.append("  3. If pattern found: Claude Haiku calibrates confidence (55-89)")
+    lines.append("  4. Vision fires on-chain via Chainlink webhook")
+    lines.append("  5. Subscribers receive VisionFired event with full payload")
+    lines.append("")
+
+    lines.append(f"Vision Registry: {registry}")
+    lines.append(f"Chain: Polygon PoS (mainnet)")
+    lines.append(f"Subscription fee: FREE")
+    lines.append(f"Tokens: {', '.join(tokens)}")
+    lines.append(f"Signal frequency: ~30 Visions/year for BTC")
+    lines.append("")
+
+    if stats.get("total_fired"):
+        lines.append(f"Stats: {stats['total_fired']} total fired, "
+                     f"avg confidence {stats.get('avg_confidence', 'N/A')}")
+        lines.append("")
+
+    # Include integration guide (LangChain combines info + guide)
+    lines.append("Integration:\n")
+    lines.append("```solidity")
+    lines.append("interface IPythiaVisionRegistry {")
+    lines.append("    function subscribe(bytes32 tokenId) external;")
+    lines.append("    function unsubscribe(bytes32 tokenId) external;")
+    lines.append("    function isSubscribed(address, bytes32) external view returns (bool);")
+    lines.append("}")
+    lines.append("")
+    lines.append("// Token IDs: keccak256 of token name")
+    lines.append('// BTC = keccak256("BTC")')
+    lines.append(f"// Registry: {registry}")
+    lines.append("```")
+    lines.append("")
+    lines.append("Pattern Types in VisionFired event:")
+    lines.append("  0x11=CAPITULATION_STRONG, 0x10=CAPITULATION_BOUNCE")
+    lines.append("  0x21=EMA_DIVERGENCE_STRONG, 0x20=EMA_DIVERGENCE_SNAP")
+    lines.append("  0x30=BOLLINGER_EXTREME, 0x40=OVERBOUGHT_CONTINUATION")
+    return "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------
+# Tool: Vision History
+# ---------------------------------------------------------------------------
+
+
+class _VisionHistoryInput(BaseModel):
+    token: str = Field(
+        default="BTC",
+        description="Token symbol to check Visions for, e.g. 'BTC'",
+    )
+
+
+class PythiaVisionHistoryTool(BaseTool):
+    """Get recent Pythia Visions fired for a token with pattern breakdown."""
+
+    name: str = "pythia_vision_history"
+    description: str = (
+        "Get recent Pythia Visions fired for a token. Returns pattern "
+        "detections with confidence, direction, price, and pattern breakdown."
+    )
+    args_schema: Type[BaseModel] = _VisionHistoryInput
+
+    def _run(
+        self,
+        token: str = "BTC",
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> str:
+        data = fetch_data_sync()
+        return _format_vision_history(data, token)
+
+    async def _arun(
+        self,
+        token: str = "BTC",
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+    ) -> str:
+        data = await fetch_data()
+        return _format_vision_history(data, token)
+
+
+def _format_vision_history(data: dict, token: str) -> str:
+    visions = data.get("visions", {}) if data else {}
+
+    if not visions:
+        return ("Pythia Visions data not available yet. "
+                "Use pythia_visions_info for pattern details and contract address.")
+
+    recent = visions.get("recent", [])
+    stats = visions.get("stats", {})
+    registry = visions.get("registry", _VISIONS_REGISTRY)
+    token_upper = token.upper()
+
+    filtered = [v for v in recent if v.get("token", "").upper() == token_upper]
+
+    lines = [f"Pythia Visions — {token_upper} History\n"]
+    lines.append(f"Registry: {registry}")
+    lines.append(f"Subscription: FREE\n")
+
+    if not filtered:
+        lines.append(f"No Visions have fired for {token_upper} yet.")
+        lines.append(f"\nAvailable tokens: {', '.join(visions.get('tokens', []))}")
+        return "\n".join(lines)
+
+    lines.append(f"Recent Visions ({len(filtered)} shown):\n")
+    for v in filtered:
+        lines.append(f"  {v.get('fired_at', '?')}")
+        lines.append(f"    Pattern:    {v.get('pattern_name', '?')}")
+        lines.append(f"    Confidence: {v.get('confidence', '?')}")
+        lines.append(f"    Direction:  {v.get('direction', '?')}")
+        lines.append(f"    Price:      ${v.get('price_usd', 0):,.2f}")
+        lines.append("")
+
+    # Pattern breakdown
+    pattern_counts: dict[str, list[int]] = {}
+    for v in filtered:
+        name = v.get("pattern_name", "?")
+        conf = v.get("confidence", 0)
+        if name not in pattern_counts:
+            pattern_counts[name] = []
+        pattern_counts[name].append(conf)
+
+    lines.append("Pattern Breakdown:\n")
+    for name, confs in sorted(pattern_counts.items(), key=lambda x: -len(x[1])):
+        avg = sum(confs) / len(confs) if confs else 0
+        lines.append(f"  {name:<28} {len(confs)} fires, avg confidence {avg:.1f}")
+    lines.append("")
+
+    if stats.get("total_fired"):
+        lines.append(f"Overall: {stats['total_fired']} total fired, "
+                     f"avg confidence {stats.get('avg_confidence', 'N/A')}")
     return "\n".join(lines)

@@ -5,7 +5,7 @@
 
 **LangChain integration for Pythia Oracle — on-chain calculated crypto indicators via Chainlink.**
 
-Access EMA, RSI, Bollinger Bands, Volatility, and more for 22 crypto tokens directly from your LangChain agents. Pythia is the first oracle delivering calculated technical indicators on-chain, not just prices.
+Access EMA, RSI, Bollinger Bands, Volatility, and more for 22 crypto tokens directly from your LangChain agents. Pythia is the first oracle delivering calculated technical indicators on-chain, not just prices. Includes Pythia Events (indicator alert subscriptions) and Pythia Visions (AI-calibrated market intelligence).
 
 ## Installation
 
@@ -40,6 +40,10 @@ from langchain_pythia import (
     PythiaHealthCheckTool,
     PythiaContractsTool,
     PythiaPricingTool,
+    PythiaEventsInfoTool,
+    PythiaSubscribeInfoTool,
+    PythiaVisionsInfoTool,
+    PythiaVisionHistoryTool,
 )
 
 tools = [
@@ -48,6 +52,10 @@ tools = [
     PythiaHealthCheckTool(),
     PythiaContractsTool(),
     PythiaPricingTool(),
+    PythiaEventsInfoTool(),
+    PythiaSubscribeInfoTool(),
+    PythiaVisionsInfoTool(),
+    PythiaVisionHistoryTool(),
 ]
 
 llm = ChatOpenAI(model="gpt-4o")
@@ -68,6 +76,10 @@ response = agent.invoke(
 | `PythiaHealthCheckTool` | Per-token 30-day uptime, data source health, incident report |
 | `PythiaContractsTool` | Contract addresses (operator, consumers, faucet, LINK) for on-chain integration |
 | `PythiaPricingTool` | Pricing tiers and free trial faucet info |
+| `PythiaEventsInfoTool` | Pythia Events overview — indicator alert subscriptions |
+| `PythiaSubscribeInfoTool` | Plan a specific event subscription with cost and exact calls |
+| `PythiaVisionsInfoTool` | Pythia Visions overview — 6 backtested patterns, accuracy, integration guide |
+| `PythiaVisionHistoryTool` | Recent Visions fired for a token with pattern breakdown |
 
 ## What Pythia Provides
 
@@ -76,6 +88,8 @@ response = agent.invoke(
 - **4 timeframes:** 5-minute, 1-hour, 1-day, 1-week
 - **On-chain delivery** via Chainlink on Polygon
 - **Free trial** via PythiaFaucet — no LINK needed, 5 requests/day
+- **Pythia Events:** Subscribe to indicator conditions (ABOVE/BELOW thresholds), get triggered on-chain
+- **Pythia Visions:** AI-calibrated market intelligence — 6 backtested patterns with 74-89% accuracy, FREE
 
 ## Use Cases
 
