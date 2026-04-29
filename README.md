@@ -71,25 +71,25 @@ response = agent.invoke(
 
 | Tool | Description |
 |------|-------------|
-| `PythiaListTokensTool` | List all 22 tracked tokens with status, uptime, and data sources |
+| `PythiaListTokensTool` | List every tracked token with status, uptime, and data sources |
 | `PythiaTokenFeedsTool` | Get all indicator feed names (EMA, RSI, Bollinger, Volatility) for a token |
 | `PythiaHealthCheckTool` | Per-token 30-day uptime, data source health, incident report |
 | `PythiaContractsTool` | Contract addresses (operator, consumers, faucet, LINK) for on-chain integration |
-| `PythiaPricingTool` | Pricing tiers and free trial faucet info |
+| `PythiaPricingTool` | Current pricing tiers and free trial faucet info |
 | `PythiaEventsInfoTool` | Pythia Events overview — indicator alert subscriptions |
 | `PythiaSubscribeInfoTool` | Plan a specific event subscription with cost and exact calls |
-| `PythiaVisionsInfoTool` | Pythia Visions overview — 6 backtested patterns, accuracy, integration guide |
+| `PythiaVisionsInfoTool` | Pythia Visions overview — current pattern catalog, accuracy ranges, integration guide |
 | `PythiaVisionHistoryTool` | Recent Visions fired for a token with pattern breakdown |
 
 ## What Pythia Provides
 
-- **484 indicator feeds** across 22 tokens (BTC, SOL, TAO, RENDER, ONDO, AAVE, UNI, and more)
-- **5 indicator types:** EMA, RSI, Bollinger (upper/lower), Volatility, USD Price
-- **4 timeframes:** 5-minute, 1-hour, 1-day, 1-week
-- **On-chain delivery** via Chainlink on Polygon
-- **Free trial** via PythiaFaucet — no LINK needed, 5 requests/day
+- **A growing catalog of indicator feeds across multiple tokens** — for the live token list and feed count, run `PythiaListTokensTool` or fetch [`feed-status.json`](https://pythia.c3x-solutions.com/feed-status.json)
+- **Indicator types:** EMA, RSI, Bollinger Bands, VWAP, Volatility, USD Price (catalog evolves; `PythiaTokenFeedsTool` returns the active list per token)
+- **Timeframes:** 5-minute, 1-hour, 1-day, 1-week
+- **On-chain delivery** via Chainlink
+- **Free trial** via PythiaFaucet — no LINK needed
 - **Pythia Events:** Subscribe to indicator conditions (ABOVE/BELOW thresholds), get triggered on-chain
-- **Pythia Visions:** AI-calibrated market intelligence — 6 backtested patterns with 74-89% accuracy, FREE
+- **Pythia Visions:** AI-calibrated market intelligence on-chain — walk-forward validated patterns, FREE. Live catalog via `PythiaVisionsInfoTool`.
 
 ## Use Cases
 
